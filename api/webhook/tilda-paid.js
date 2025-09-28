@@ -39,7 +39,7 @@ export default async (req, res) => {
         <p>Если QR не сканируется, назовите код: <code>${token}</code></p>
       `,
       attachments: [{ filename: `ticket-${tid}.png`, content: qrPng, cid: `qr@${tid}` }],
-      inlineCidHtmlReplace: true // если в отправщике используешь <img src="cid:...">
+      inlineCidHtmlReplace: true 
     });
 
     results.push({ tid });
