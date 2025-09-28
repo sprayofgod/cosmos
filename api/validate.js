@@ -1,6 +1,6 @@
 // api/validate.js
 import crypto from 'crypto';
-import { db } from './_lib/db.js';
+import { db } from '../_lib/db.js';
 const SECRET = process.env.TICKET_SECRET;
 
 export default async (req, res) => {
