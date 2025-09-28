@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/**/*.js": { "runtime": "nodejs20.x", "memory": 256, "maxDuration": 10 }
+  },
+  "routes": [
+    { "src": "/scan", "dest": "/scan/index.html" }
+  ]
+}

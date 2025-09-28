@@ -1,0 +1,58 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Сканер билетов</title>
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto; margin: 0; padding: 16px; }
+  #preview { width: 100%; max-width: 520px; border-radius: 12px; }
+  .status { margin-top: 12px; padding: 12px; border-radius: 10px; }
+  .ok { background: #e9f7ef; color: #196f3d; }
+  .bad { background: #fdecea; color: #c0392b; }
+  button { padding: 10px 14px; border-radius: 10px; border: 1px solid #ddd; }
+</style>
+<div>
+  <video id="preview" autoplay playsinline></video>
+  <div id="msg" class="status">Наведите камеру на QR…</div>
+  <button id="toggle">Переключить камеру</button>
+</div>
+<script type="module">
+import { BrowserMultiFormatReader } from 'https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/+esm';
+
+const codeReader = new BrowserMultiFormatReader();
+let selDeviceId = null;
+const msg = (text, ok=false) => {
+  const el = document.getElementById('msg');
+  el.className = 'status ' + (ok ? 'ok' : 'bad');
+  el.textContent = text;
+};
+
+async function start() {
+  const devices = await BrowserMultiFormatReader.listVideoInputDevices();
+  selDeviceId = selDeviceId || devices.at(-1)?.deviceId || devices[0]?.deviceId;
+  const preview = document.getElementById('preview');
+
+  await codeReader.decodeFromVideoDevice(selDeviceId, preview, async (result, err) => {
+    if (!result) return;
+    // остановим, чтобы не спамить
+    await codeReader.reset();
+    try {
+      const r = await fetch('/api/validate', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ token: result.text })
+      });
+      const data = await r.json();
+      if (data.ok) {
+        msg(`OK: ${data.name || 'Гость'} – ${data.type || ''}`, true);
+      } else {
+        msg(`Ошибка: ${data.error}`);
+      }
+    } catch (e) {
+      msg('Сеть недоступна или сервер ошибки');
+    } finally {
+      // через секунду снова сканируем
+      setTimeout(start, 1000);
+    }
+  });
+}
+document.getElementById('toggle').onclick = () => { selDeviceId = null; codeReader.reset(); start(); };
+start();
+</script>
