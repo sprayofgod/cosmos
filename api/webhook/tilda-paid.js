@@ -1,49 +1,75 @@
-// api/webhook/tilda-paid.js
-import crypto from 'crypto';
-import QRCode from 'qrcode';
-import { sendEmail } from '../_lib/mailer.js';
-import { db } from '../_lib/db.js';
+export default async function handler(req, res) {
+  try {
+    if (req.method !== 'POST') return res.status(405).end();
 
-const SECRET = process.env.TICKET_SECRET; // длинный случайный
+    // На некоторых конфигах body бывает строкой
+    const raw = typeof req.body === 'string' ? safeJson(req.body) : req.body || {};
+    const status = String(raw.payment_status || raw.status || '').toLowerCase();
 
-export default async (req, res) => {
-  if (req.method !== 'POST') return res.status(405).end();
+    // Быстрая ветка: НЕ paid -> даже не трогаем БД/SMTP
+    if (status !== 'paid') {
+      return res.status(200).json({ ok: true, skip: 'not paid', status });
+    }
 
-  const { order_id, email, name, ticket_type, event_id, status, quantity = 1 } = req.body || {};
-  if (status !== 'paid') return res.json({ ok: true, skip: 'not paid' });
+    // ===== Ниже грузим тяжёлые зависимости только при paid =====
+    const crypto = await import('crypto').then(m => m.default || m);
+    const { db } = await import('../../_lib/db.js');
+    const { makeToken, tokenToPng } = await import('../../_lib/qr.js');
+    const { sendTicketEmail } = await import('../../_lib/mailer.js');
 
-  const results = [];
+    const order_id   = String(raw.orderid || raw.order_id || '').trim();
+    const email      = String(raw.email || '').trim().toLowerCase();
+    const name       = String(raw.name || '').trim();
+    const ticketType = String(raw.ticket_type || 'Стандарт').trim();
+    const qty        = Number(raw.tickets_qty || raw.quantity || 1);
+    const event_id   = process.env.EVENT_ID || 'event';
 
-  for (let i = 0; i < Number(quantity); i++) {
-    const tid = crypto.randomUUID();
-    const payload = `${tid}.${order_id}.${event_id}`;
-    const signature = crypto.createHmac('sha256', SECRET).update(payload).digest('base64url');
-    const token = `${payload}.${signature}`;
+    if (!order_id || !email || qty < 1) {
+      return res.status(400).json({ ok: false, error: 'BAD_PAYLOAD' });
+    }
 
-    await db.query(
-      `INSERT INTO tickets (id, order_id, event_id, email, name, ticket_type, status, signature)
-       VALUES ($1,$2,$3,$4,$5,$6,'unused',$7)`,
-      [tid, order_id, event_id, email, name, ticket_type, signature]
-    );
+    const issued = [];
+    for (let i = 0; i < qty; i++) {
+      const tid    = crypto.randomUUID();
+      const token  = makeToken({ tid, order_id, event_id });
+      const sign   = token.split('.').pop();
 
-    const qrPng = await QRCode.toBuffer(token, { errorCorrectionLevel: 'M', width: 512 });
+      await db.query(
+        `insert into tickets (id, order_id, event_id, email, name, ticket_type, status, signature)
+         values ($1,$2,$3,$4,$5,$6,'unused',$7)`,
+        [tid, order_id, event_id, email, name, ticketType, sign]
+      );
 
-    await sendEmail({
-      to: email,
-      subject: `Ваш билет на мероприятие`,
-      html: `
-        <p>Здравствуйте, ${name || 'гость'}!</p>
-        <p>Ниже – ваш QR-билет. Покажите его на входе.</p>
-        <p><strong>Номер заказа:</strong> ${order_id}<br>
-           <strong>Тип билета:</strong> ${ticket_type || 'Стандарт'}</p>
-        <p>Если QR не сканируется, назовите код: <code>${token}</code></p>
-      `,
-      attachments: [{ filename: `ticket-${tid}.png`, content: qrPng, cid: `qr@${tid}` }],
-      inlineCidHtmlReplace: true 
-    });
+      const png       = await tokenToPng(token, 600);
+      const eventName = process.env.EVENT_NAME || 'Мероприятие';
 
-    results.push({ tid });
+      const html = `
+        <p>Здравствуйте${name ? `, ${escapeHtml(name)}` : ''}!</p>
+        <p>Ваш QR-билет на «${escapeHtml(eventName)}».</p>
+        <p><strong>Номер заказа:</strong> ${escapeHtml(order_id)}<br>
+           <strong>Тип билета:</strong> ${escapeHtml(ticketType)}</p>
+        <p>Покажите QR на входе. Резервный код:<br>
+           <code style="word-break:break-all">${escapeHtml(token)}</code></p>
+        <img src="cid:qr@${tid}" alt="QR" width="300" height="300"/>
+      `;
+
+      await sendTicketEmail({
+        to: email,
+        subject: `Ваш билет – ${eventName}`,
+        html,
+        attachments: [{ filename: `ticket-${tid}.png`, content: png, cid: `qr@${tid}` }]
+      });
+
+      issued.push(tid);
+    }
+
+    return res.status(200).json({ ok: true, issued: issued.length });
+
+  } catch (e) {
+    console.error('tilda-paid error:', e);
+    return res.status(500).json({ ok: false, error: 'SERVER_ERROR' });
   }
+}
 
-  res.json({ ok: true, issued: results.length });
-};
+function safeJson(s) { try { return JSON.parse(s); } catch { return {}; } }
+function escapeHtml(str=''){ return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
