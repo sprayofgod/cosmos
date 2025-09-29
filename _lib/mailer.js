@@ -6,7 +6,7 @@ const user   = process.env.SMTP_USER;
 const pass   = process.env.SMTP_PASS;
 const from   = process.env.SMTP_FROM;      // "Brand <no-reply@yourdomain.tld>"
 const helo   = process.env.SMTP_HELO ||    // FQDN для EHLO
-               (new URL(`https://${process.env.MAIL_HELO_DOMAIN || 'yandex.by'}`)).host;
+               (new URL(`https://${process.env.MAIL_HELO_DOMAIN || 'modul.promo'}`)).host;
 
 const secure = port === 465; // 465 — SMTPS, 587 — STARTTLS
 
