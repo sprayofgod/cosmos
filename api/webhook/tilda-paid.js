@@ -126,8 +126,7 @@ export default async function handler(req, res) {
 
       // Email
       const html = `
-      
-        <!-- Прехедер (скрыт) -->
+   <!-- Прехедер (скрыт) -->
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
 //   Ваш электронный билет на ${escapeHtml(event_name)}. Покажите QR на входе. Резервный код внутри письма.
 <h1> QR код билета работает в тестовом режиме! По всем вопросам обращайтесь к организаторам</h1>
