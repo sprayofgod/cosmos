@@ -1,58 +1,99 @@
-<!doctype html>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Сканер билетов</title>
-<style>
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto; margin: 0; padding: 16px; }
-  #preview { width: 100%; max-width: 520px; border-radius: 12px; }
-  .status { margin-top: 12px; padding: 12px; border-radius: 10px; }
-  .ok { background: #e9f7ef; color: #196f3d; }
-  .bad { background: #fdecea; color: #c0392b; }
-  button { padding: 10px 14px; border-radius: 10px; border: 1px solid #ddd; }
-</style>
-<div>
-  <video id="preview" autoplay playsinline></video>
-  <div id="msg" class="status">Наведите камеру на QR…</div>
-  <button id="toggle">Переключить камеру</button>
-</div>
 <script type="module">
 import { BrowserMultiFormatReader } from 'https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/+esm';
 
-const codeReader = new BrowserMultiFormatReader();
-let selDeviceId = null;
-const msg = (text, ok=false) => {
-  const el = document.getElementById('msg');
-  el.className = 'status ' + (ok ? 'ok' : 'bad');
-  el.textContent = text;
+const reader = new BrowserMultiFormatReader();
+const camSel = document.getElementById('camera');
+const video  = document.getElementById('preview');
+const msgEl  = document.getElementById('msg');
+
+video.setAttribute('playsinline','');
+video.setAttribute('autoplay','');
+video.setAttribute('muted',''); // iOS требует для автозапуска
+
+function setMsg(t, ok) { msgEl.className = 'status ' + (ok ? 'ok' : 'bad'); msgEl.textContent = t; }
+
+async function ensurePermission() {
+  // Нужен пользовательский жест на iOS
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false
+    });
+    // не показываем поток сами — zxing возьмёт управление, просто отпускаем
+    stream.getTracks().forEach(t => t.stop());
+  } catch (e) {
+    console.warn('getUserMedia failed:', e);
+  }
+}
+
+async function listCams() {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const videos  = devices.filter(d => d.kind === 'videoinput');
+  camSel.innerHTML = '';
+  for (const d of videos) {
+    const o = document.createElement('option');
+    o.value = d.deviceId;
+    o.textContent = d.label || `Камера ${camSel.length + 1}`;
+    camSel.appendChild(o);
+  }
+  // Попробуем выбрать заднюю
+  const prefer = Array.from(camSel.options).find(o => /rear|back|environment/i.test(o.textContent));
+  if (prefer) camSel.value = prefer.value;
+  if (videos.length === 0) camSel.innerHTML = '<option>Нет камеры</option>';
+}
+
+async function startSelected() {
+  await reader.reset();
+  const id = camSel.value || null;
+  try {
+    await reader.decodeFromVideoDevice(id, video, async (r, err) => {
+      if (r) {
+        await reader.reset();
+        await validate(r.getText());
+        // Через паузу перезапускаем скан
+        setTimeout(startSelected, 800);
+      } else if (err) {
+        // никаких сообщений — нормальный процесс сканирования
+      }
+    });
+    setMsg('Наведите камеру на QR…', true);
+  } catch (e) {
+    console.error(e);
+    setMsg('Не удалось открыть камеру. Разрешите доступ в браузере.', false);
+  }
+}
+
+async function validate(token) {
+  try {
+    const r = await fetch('/api/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    const d = await r.json();
+    if (d.ok) setMsg(`OK — ${d.name || 'Гость'}${d.type ? ' · ' + d.type : ''}`, true);
+    else     setMsg(`Ошибка — ${d.error}`, false);
+  } catch {
+    setMsg('Сеть недоступна', false);
+  }
+}
+
+document.getElementById('reload').onclick = async () => {
+  await ensurePermission();    // важно: сначала запросить доступ
+  await listCams();            // labels появятся только после разрешения
+  await startSelected();
 };
 
-async function start() {
-  const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-  selDeviceId = selDeviceId || devices.at(-1)?.deviceId || devices[0]?.deviceId;
-  const preview = document.getElementById('preview');
+document.getElementById('check').onclick = () => {
+  const t = document.getElementById('manual').value.trim();
+  if (t) validate(t);
+};
 
-  await codeReader.decodeFromVideoDevice(selDeviceId, preview, async (result, err) => {
-    if (!result) return;
-    // остановим, чтобы не спамить
-    await codeReader.reset();
-    try {
-      const r = await fetch('/api/validate', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ token: result.text })
-      });
-      const data = await r.json();
-      if (data.ok) {
-        msg(`OK: ${data.name || 'Гость'} – ${data.type || ''}`, true);
-      } else {
-        msg(`Ошибка: ${data.error}`);
-      }
-    } catch (e) {
-      msg('Сеть недоступна или сервер ошибки');
-    } finally {
-      // через секунду снова сканируем
-      setTimeout(start, 1000);
-    }
-  });
-}
-document.getElementById('toggle').onclick = () => { selDeviceId = null; codeReader.reset(); start(); };
-start();
+// Автозапуск после первого клика/тапа по странице — для iOS
+document.addEventListener('click', async function once() {
+  document.removeEventListener('click', once);
+  await ensurePermission();
+  await listCams();
+  await startSelected();
+});
 </script>

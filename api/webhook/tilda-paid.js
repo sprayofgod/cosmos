@@ -126,13 +126,66 @@ export default async function handler(req, res) {
 
       // Email
       const html = `
-        <p>Здравствуйте${name ? `, ${escapeHtml(name)}` : ''}!</p>
-        <p>Спасибо за покупку билета на <strong>${escapeHtml(event_name)}</strong>.</p>
-        <p><strong>Номер заказа:</strong> ${escapeHtml(rawOrderId)}<br>
-           <strong>Тип билета:</strong> ${escapeHtml(ticketType)}</p>
-        <p>Покажите QR на входе или назовите резервный код:</p>
-        <p><code style="word-break:break-all">${escapeHtml(token)}</code></p>
-        <p><img src="cid:qr@${tid}" alt="QR" width="300" height="300"/></p>
+      
+        <!-- Прехедер (скрыт) -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">
+//   Ваш электронный билет на ${escapeHtml(event_name)}. Покажите QR на входе. Резервный код внутри письма.
+  Ваш электронный билет на КОСМОС НАШ. Покажите QR на входе. Резервный код внутри письма.
+</div>
+
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f6f7f9;padding:24px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:600px;background:#ffffff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);">
+        <!-- Шапка -->
+        <tr>
+          <td align="center" style="padding:20px 24px;border-bottom:1px solid #eef0f3;">
+            <!-- Логотип (опционально): замените src -->
+             <img src="https://optim.tildacdn.biz/tild3364-3435-4539-b337-623031396262/-/resize/600x700/-/format/webp/-.jpg.webp" width="120" height="36" alt="wwww" style="display:block;border:0;"> 
+            <div style="font:700 20px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#1a1d22;">Ваш билет</div>
+            <div style="font:400 13px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#6b7280; margin-top:6px;">КОСМОС НАШ</div>
+          </td>
+        </tr>
+
+        <!-- Контент -->
+        <tr>
+          <td style="padding:24px;">
+            <div style="font:400 16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#1f2937;">
+              Здравствуйте ${name ? `, ${escapeHtml(name)}` : ''}! Спасибо за покупку билета на <strong>КОСМОС НАШ</strong>.
+            </div>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:16px;background:#f7faf9;border:1px solid #e2e8f0;border-radius:10px;">
+              <tr>
+                <td style="padding:14px 16px;font:400 14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#374151;">
+                  <div><strong>Номер заказа:</strong> ${escapeHtml(rawOrderId)}</div>
+                  <div><strong>Тип билета:</strong> ${escapeHtml(ticketType)}</div>
+                  <div><strong>Имя:</strong> ${name ? `, ${escapeHtml(name)}` : ''}</div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- QR -->
+            <div style="text-align:center;margin:22px 0 10px;">
+             <p><img src="cid:qr@${tid}" alt="QR" width="300" height="300"/></p>
+            </div>
+
+            <!-- Резервный код -->
+            <div style="font:400 13px/1.6 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;color:#111827;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:12px;word-break:break-all;">
+              Резервный код (на случай, если QR не сканируется):<br>
+              <span style="font-weight:600">${escapeHtml(token)}</span>
+            </div>
+
+            <div style="font:400 12px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#6b7280;margin-top:14px;">
+              Покажите этот QR код на входе. Не делитесь билетом с третьими лицами. 
+            </div>
+          </td>
+        </tr>
+
+       
+      </table>
+    </td>
+  </tr>
+</table>
       `;
       try {
         await sendTicketEmail({
