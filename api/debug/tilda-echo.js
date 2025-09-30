@@ -14,12 +14,10 @@ export default async function handler(req, res) {
       try { parsed = JSON.parse(raw); } catch {}
     } else if (ct.includes('application/x-www-form-urlencoded')) {
       parsed = Object.fromEntries(new URLSearchParams(raw));
-      // Tilda иногда кладёт вложенные payment.* как строки JSON — попробуем распарсить
       if (parsed.payment && typeof parsed.payment === 'string') {
         try { parsed.payment = JSON.parse(parsed.payment); } catch {}
       }
     } else {
-      // Попытка угадать
       try { parsed = JSON.parse(raw); } catch {
         try { parsed = Object.fromEntries(new URLSearchParams(raw)); } catch {}
       }
@@ -32,7 +30,7 @@ export default async function handler(req, res) {
 
     console.log('TILDA WEBHOOK DEBUG:', { ct, topKeys, paymentKeys, raw });
 
-    return res.status(200).json({
+    res.status(200).json({
       ok: true,
       contentType: ct,
       keys: topKeys,
@@ -40,6 +38,6 @@ export default async function handler(req, res) {
       sample: parsed
     });
   } catch (e) {
-    return res.status(500).json({ ok:false, error: e?.message || String(e) });
+    res.status(500).json({ ok:false, error: e?.message || String(e) });
   }
 }
