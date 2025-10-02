@@ -133,6 +133,7 @@ export default async function handler(req, res) {
   Ваш электронный билет на КОСМОС НАШ. Покажите QR на входе. Резервный код внутри письма.
 </div>
 
+
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f6f7f9;padding:24px 0;">
   <tr>
     <td align="center">
