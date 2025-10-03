@@ -159,7 +159,7 @@ export default async function handler(req, res) {
               <tr>
                 <td style="padding:14px 16px;font:400 14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#374151;">
                   <div><strong>Номер заказа:</strong> ${escapeHtml(rawOrderId)}</div>
-                  <div><strong>Тип билета:</strong> ${escapeHtml(ticketType)}</div>
+                
                   <div><strong>Имя:</strong> ${name ? `, ${escapeHtml(name)}` : ''}</div>
                 </td>
               </tr>
