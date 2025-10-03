@@ -142,7 +142,7 @@ export default async function handler(req, res) {
         <tr>
           <td align="center" style="padding:20px 24px;border-bottom:1px solid #eef0f3;">
 
-             <img src="https://static.tildacdn.com/tild3364-3435-4539-b337-623031396262/-.jpg" alt="wwww" style="display:block;border:0;"> 
+             <img src="https://github.com/sprayofgod/cosmos/blob/master/ticketpic.jpg?raw=true" alt="wwww" style="display:block;border:0;"> 
             <div style="font:700 20px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#1a1d22;">Ваш билет</div>
             <div style="font:400 13px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#6b7280; margin-top:6px;">КОСМОС НАШ</div>
           </td>
