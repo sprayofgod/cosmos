@@ -34,6 +34,12 @@
     </div>
 
     <div id="msg" class="status">Готово. Нажмите «Запустить» и дайте доступ к камере.</div>
+
+    <!-- Карточка с данными билета -->
+    <div id="card" style="display:none;margin-top:12px;padding:12px;border:1px solid #374151;border-radius:10px;background:#0f172a;">
+      <div style="font-weight:600" id="card-title">—</div>
+      <div style="margin-top:6px;font-size:14px;opacity:.9" id="card-meta">—</div>
+    </div>
   </main>
 
   <script type="module">
@@ -48,7 +54,29 @@
     video.setAttribute('autoplay','');
     video.setAttribute('muted','');
 
-    function setMsg(t, ok) { msgEl.className = 'status ' + (ok===true ? 'ok' : ok===false ? 'bad' : ''); msgEl.textContent = t; }
+    function setMsg(t, ok) {
+      msgEl.className = 'status ' + (ok===true ? 'ok' : ok===false ? 'bad' : '');
+      msgEl.textContent = t;
+    }
+
+    function showCard(data, ok) {
+      const card  = document.getElementById('card');
+      const title = document.getElementById('card-title');
+      const meta  = document.getElementById('card-meta');
+
+      if (!data) { card.style.display = 'none'; return; }
+
+      title.textContent = (data.name || 'Гость');
+      title.style.color = ok ? '#34d399' : '#fca5a5';
+
+      const parts = [];
+      // if (data.type) parts.push(`Тип: ${data.type}`);
+      if (data.order_id) parts.push(`Заказ: ${data.order_id}`);
+      if (data.used) parts.push(`Статус: уже использован${data.used_at ? ' (' + new Date(data.used_at).toLocaleString() + ')' : ''}`);
+      meta.textContent = parts.join(' · ');
+
+      card.style.display = 'block';
+    }
 
     async function ensurePermission() {
       try {
@@ -95,7 +123,7 @@
         setMsg('Наведите камеру на QR…', true);
       } catch (e) {
         console.error(e);
-        setMsg('Не удалось открыть камеру. Разрешите доступ в браузере.', false);
+        setMsg('Не удалось открыть камеру. Разрешите доступ к камере в браузере.', false);
       }
     }
 
@@ -107,10 +135,20 @@
           body: JSON.stringify({ token })
         });
         const d = await r.json();
-        if (d.ok) setMsg(`OK — ${d.name || 'Гость'}${d.type ? ' · ' + d.type : ''}`, true);
-        else     setMsg(`Ошибка — ${d.error}`, false);
+
+        if (d.ok) {
+          setMsg(`OK — ${d.name || 'Гость'}${d.type ? ' · ' + d.type : ''}`, true);
+          showCard(d, true);
+        } else {
+          const text = d.error === 'ALREADY_USED'
+            ? `УЖЕ ИСПОЛЬЗОВАН — ${d.name || 'Гость'}${d.type ? ' · ' + d.type : ''}`
+            : `ОШИБКА — ${d.error || 'неизвестно'}`;
+          setMsg(text, false);
+          showCard(d, false);
+        }
       } catch (e) {
         setMsg('Сеть недоступна', false);
+        showCard(null, false);
       }
     }
 
