@@ -128,9 +128,9 @@ export default async function handler(req, res) {
       const html = `
    <!-- Прехедер (скрыт) -->
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
-//   Ваш электронный билет на ${escapeHtml(event_name)}. Покажите QR на входе. Резервный код внутри письма.
-<h1> QR код билета работает в тестовом режиме! По всем вопросам обращайтесь к организаторам</h1>
-  Ваш электронный билет на КОСМОС НАШ. Покажите QR на входе. Резервный код внутри письма.
+//   Ваша возможность прикаснуться к чемуто большему на НЕЧТО. Покажите QR на входе. Резервный код внутри письма.
+<h1> QR код работает в тестовом режиме! По всем вопросам обращайтесь к организаторам</h1>
+  Ваша возможность прикаснуться к чемуто большему на НЕЧТО. Покажите QR на входе. Резервный код внутри письма.
 </div>
 
 
@@ -143,8 +143,8 @@ export default async function handler(req, res) {
           <td align="center" style="padding:20px 24px;border-bottom:1px solid #eef0f3;">
 
              <img src="https://static.tildacdn.biz/tild3266-3238-4430-b135-663161646437/ticketpic.jpg" alt="wwww" style="display:block;border:0;"> 
-            <div style="font:700 20px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#1a1d22;">Ваш билет</div>
-            <div style="font:400 13px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#6b7280; margin-top:6px;">КОСМОС НАШ</div>
+            <div style="font:700 20px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#1a1d22;">Ваша возможность прикаснуться к чемуто большему</div>
+            <div style="font:400 13px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#6b7280; margin-top:6px;">НЕЧТО</div>
           </td>
         </tr>
 
@@ -152,13 +152,13 @@ export default async function handler(req, res) {
         <tr>
           <td style="padding:24px;">
             <div style="font:400 16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#1f2937;">
-              Здравствуйте ${name ? `, ${escapeHtml(name)}` : ''}! Спасибо за покупку билета на <strong>КОСМОС НАШ</strong>.
+              Здравствуйте ${name ? `, ${escapeHtml(name)}` : ''}! Спасибо за <strong>НЕЧТО</strong>.
             </div>
 
             <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:16px;background:#f7faf9;border:1px solid #e2e8f0;border-radius:10px;">
               <tr>
                 <td style="padding:14px 16px;font:400 14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#374151;">
-                  <div><strong>Номер заказа:</strong> ${escapeHtml(rawOrderId)}</div>
+                  <div><strong>Номер:</strong> ${escapeHtml(rawOrderId)}</div>
                 
                   <div><strong>Имя:</strong> ${name ? `${escapeHtml(name)}` : ''}</div>
                 </td>
@@ -177,7 +177,7 @@ export default async function handler(req, res) {
             </div>
 
             <div style="font:400 12px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#6b7280;margin-top:14px;">
-              Покажите этот QR код на входе. Не делитесь билетом с третьими лицами. 
+              Покажите этот QR код на входе. Не делитесь с третьими лицами. 
             </div>
           </td>
         </tr>
