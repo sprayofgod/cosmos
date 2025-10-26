@@ -142,7 +142,7 @@ export default async function handler(req, res) {
         <tr>
           <td align="center" style="padding:20px 24px;border-bottom:1px solid #eef0f3;">
 
-             <img src="https://static.tildacdn.biz/tild3266-3238-4430-b135-663161646437/ticketpic.jpg" alt="wwww" style="display:block;border:0;"> 
+             <img src="https://static.tildacdn.biz/tild3635-3332-4634-a632-633765616635/123.png" alt="wwww" style="display:block;border:0;"> 
             <div style="font:700 20px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#1a1d22;">Ваша возможность прикаснуться к чемуто большему</div>
             <div style="font:400 13px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial; color:#6b7280; margin-top:6px;">НЕЧТО</div>
           </td>
@@ -191,7 +191,7 @@ export default async function handler(req, res) {
       try {
         await sendTicketEmail({
           to: email,
-          subject: `Ваш билет — ${event_name}`,
+          subject: `${event_name}`,
           html,
           attachments: [{ filename: `ticket-${tid}.png`, content: png, cid: `qr@${tid}` }]
         });
