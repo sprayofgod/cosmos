@@ -167,7 +167,7 @@ export default async function handler(req, res) {
 
             <!-- QR -->
             <div style="text-align:center;margin:22px 0 10px;">
-             <p><img src="cid:qr@${tid}" alt="QR" width="300" height="300"/></p>
+             <p><img src="cid:qr@${tid}" alt="QR" width="600" height="600"/></p>
             </div>
 
             <!-- Резервный код -->
